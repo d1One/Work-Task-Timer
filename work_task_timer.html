@@ -1,0 +1,2011 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Productivity</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #0d1117;
+      --panel: #161b22;
+      --panel-2: #1d2430;
+      --border: #30363d;
+      --text: #f0f3f6;
+      --muted: #8b949e;
+      --green: #35c46a;
+      --green-dim: rgba(53, 196, 106, 0.13);
+      --red: #ff5d5d;
+      --red-dim: rgba(255, 93, 93, 0.13);
+      --yellow: #e3b341;
+      --accent: #58a6ff;
+      --radius: 12px;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      min-width: 230px;
+      background: var(--bg);
+      color: var(--text);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-variant-numeric: tabular-nums;
+    }
+
+    body {
+      width: 100%;
+      min-height: 100vh;
+      padding: 8px;
+      overflow-x: hidden;
+    }
+
+    button, input, select { font: inherit; }
+
+    button {
+      border: 0;
+      cursor: pointer;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    button:disabled {
+      cursor: not-allowed;
+      opacity: 0.45;
+    }
+
+    .app {
+      width: 100%;
+      max-width: 280px;
+      margin: 0 auto;
+    }
+
+    .topline {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin: 1px 2px 8px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 14px;
+      letter-spacing: 0.02em;
+      font-weight: 750;
+    }
+
+    .top-actions {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+    }
+
+    .settings-button {
+      display: grid;
+      place-items: center;
+      width: 27px;
+      height: 27px;
+      padding: 0;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--panel);
+      color: var(--muted);
+      font-size: 15px;
+      line-height: 1;
+    }
+
+    .settings-button:hover { color: var(--text); border-color: #48515c; }
+
+    .state-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--muted);
+      box-shadow: 0 0 0 3px rgba(139, 148, 158, 0.12);
+    }
+
+    .state-dot.running {
+      background: var(--green);
+      box-shadow: 0 0 0 3px var(--green-dim);
+    }
+
+    .state-dot.paused {
+      background: var(--yellow);
+      box-shadow: 0 0 0 3px rgba(227, 179, 65, 0.14);
+    }
+
+    .state-dot.off-clock {
+      background: var(--red);
+      box-shadow: 0 0 0 3px var(--red-dim);
+    }
+
+    .card {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--panel);
+      padding: 11px;
+      margin-bottom: 8px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.14);
+    }
+
+    .progress-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 8px;
+    }
+
+    .progress-count {
+      font-size: 29px;
+      line-height: 1;
+      font-weight: 820;
+      letter-spacing: -0.04em;
+    }
+
+    .progress-label {
+      color: var(--muted);
+      font-size: 11px;
+      text-align: right;
+      line-height: 1.25;
+    }
+
+    .progress-track {
+      height: 6px;
+      margin-top: 10px;
+      overflow: hidden;
+      border-radius: 999px;
+      background: #292f38;
+    }
+
+    .progress-fill {
+      height: 100%;
+      width: 0;
+      border-radius: inherit;
+      background: var(--accent);
+      transition: width 180ms ease;
+    }
+
+    .period-progress {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+      margin-top: 9px;
+    }
+
+    .period-progress-item {
+      padding: 6px 7px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--panel-2);
+      color: var(--muted);
+      font-size: 9px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .period-progress-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 5px;
+    }
+
+    .period-progress-item strong {
+      color: var(--text);
+      font-size: 11px;
+      letter-spacing: 0;
+    }
+
+    .period-progress-track {
+      height: 4px;
+      margin-top: 5px;
+      overflow: hidden;
+      border-radius: 999px;
+      background: #292f38;
+    }
+
+    .period-progress-fill {
+      height: 100%;
+      width: 0;
+      border-radius: inherit;
+      background: var(--accent);
+      transition: width 180ms ease;
+    }
+
+    .task-card {
+      text-align: center;
+      border-color: rgba(53, 196, 106, 0.42);
+      background: linear-gradient(180deg, var(--green-dim), transparent 70%), var(--panel);
+      transition: border-color 180ms ease, background 180ms ease;
+    }
+
+    .task-card.over {
+      border-color: rgba(255, 93, 93, 0.52);
+      background: linear-gradient(180deg, var(--red-dim), transparent 70%), var(--panel);
+    }
+
+    .task-card.paused {
+      border-color: rgba(227, 179, 65, 0.55);
+      background: linear-gradient(180deg, rgba(227, 179, 65, 0.13), transparent 70%), var(--panel);
+    }
+
+    .task-card.off-clock {
+      border-color: rgba(255, 93, 93, 0.52);
+      background: linear-gradient(180deg, var(--red-dim), transparent 70%), var(--panel);
+    }
+
+    .eyebrow {
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.09em;
+      text-transform: uppercase;
+    }
+
+    .timer {
+      margin: 3px 0 1px;
+      font-size: clamp(39px, 18vw, 49px);
+      line-height: 1;
+      font-weight: 850;
+      letter-spacing: -0.055em;
+      color: var(--green);
+    }
+
+    .task-card.near-target .timer { color: var(--yellow); }
+    .task-card.over .timer { color: var(--red); }
+    .task-card.paused .timer { color: var(--yellow); }
+    .task-card.off-clock .timer { color: var(--red); }
+
+    .pace-status {
+      min-height: 28px;
+      display: grid;
+      place-items: center;
+      color: var(--green);
+      font-size: 14px;
+      line-height: 1.3;
+    }
+
+    .task-card.over .pace-status { color: var(--red); }
+    .task-card.paused .pace-status { color: var(--yellow); }
+    .task-card.off-clock .pace-status { color: var(--red); }
+
+    .done-button {
+      width: 100%;
+      min-height: 58px;
+      margin-top: 8px;
+      border-radius: 11px;
+      background: var(--green);
+      color: #06110a;
+      font-size: 18px;
+      font-weight: 850;
+      box-shadow: inset 0 -2px 0 rgba(0,0,0,0.17);
+    }
+
+    .done-button:hover:not(:disabled) { filter: brightness(1.06); }
+    .done-button:active:not(:disabled) { transform: translateY(1px); }
+
+    .start-button {
+      width: 100%;
+      min-height: 62px;
+      border-radius: 11px;
+      background: var(--accent);
+      color: #07111d;
+      font-size: 18px;
+      font-weight: 850;
+    }
+
+    .pause-controls {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 7px;
+    }
+
+    .reason-input {
+      width: 100%;
+      min-width: 0;
+      height: 38px;
+      padding: 0 9px;
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      outline: none;
+      background: #0d1117;
+      color: var(--text);
+      font-size: 12px;
+    }
+
+    .reason-input:focus { border-color: var(--accent); }
+    .reason-input::placeholder { color: #6e7681; }
+
+    .timer-actions {
+      display: grid;
+      grid-template-columns: repeat(2, 38px);
+      gap: 6px;
+    }
+
+    .pause-button,
+    .off-clock-button {
+      display: grid;
+      place-items: center;
+      width: 38px;
+      height: 38px;
+      border-radius: 9px;
+      color: #171207;
+      font-size: 16px;
+      font-weight: 850;
+      box-shadow: inset 0 -2px 0 rgba(0,0,0,0.16);
+    }
+
+    .pause-button { background: var(--yellow); }
+
+    .off-clock-button {
+      background: var(--red);
+      color: #1a0707;
+    }
+
+    .pause-button.active,
+    .off-clock-button.active {
+      box-shadow: 0 0 0 2px var(--panel), 0 0 0 4px currentColor;
+    }
+
+    .quick-breaks-label {
+      margin: 9px 1px 5px;
+      color: var(--muted);
+      font-size: 9px;
+      font-weight: 750;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .quick-breaks {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 6px;
+    }
+
+    .quick-break-button {
+      min-width: 0;
+      min-height: 35px;
+      padding: 4px;
+      border: 1px solid rgba(227, 179, 65, 0.35);
+      border-radius: 8px;
+      background: rgba(227, 179, 65, 0.1);
+      color: #e7cb7c;
+      font-size: 9px;
+      font-weight: 760;
+      line-height: 1.2;
+    }
+
+    .quick-break-button.lunch {
+      border-color: rgba(255, 93, 93, 0.35);
+      background: var(--red-dim);
+      color: #ffaaaa;
+    }
+
+    .quick-break-button.active {
+      border-color: currentColor;
+      background: rgba(227, 179, 65, 0.2);
+    }
+
+    .quick-break-button.lunch.active { background: rgba(255, 93, 93, 0.22); }
+
+    .pause-note {
+      display: none;
+      margin-top: 7px;
+      color: var(--yellow);
+      font-size: 10px;
+      line-height: 1.3;
+      overflow-wrap: anywhere;
+    }
+
+    .pause-note.visible { display: block; }
+    .pause-note.off-clock { color: var(--red); }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 6px;
+    }
+
+    .stat {
+      min-width: 0;
+      padding: 8px 5px;
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      background: var(--panel-2);
+      text-align: center;
+    }
+
+    .stat-value {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: 14px;
+      font-weight: 780;
+    }
+
+    .stat-label {
+      margin-top: 2px;
+      color: var(--muted);
+      font-size: 9px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    details {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--panel);
+      overflow: hidden;
+      margin-bottom: 8px;
+    }
+
+    summary {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 10px 11px;
+      cursor: pointer;
+      color: var(--text);
+      font-size: 12px;
+      font-weight: 750;
+      list-style: none;
+    }
+
+    summary::-webkit-details-marker { display: none; }
+    summary::after {
+      content: "▾";
+      color: var(--muted);
+      transition: transform 150ms ease;
+    }
+    details[open] summary::after { transform: rotate(180deg); }
+
+    .details-body {
+      padding: 0 8px 8px;
+      border-top: 1px solid var(--border);
+    }
+
+    .log-list {
+      max-height: 285px;
+      overflow-y: auto;
+      padding-top: 7px;
+      scrollbar-width: thin;
+    }
+
+    .empty-log {
+      padding: 12px 5px;
+      color: var(--muted);
+      font-size: 11px;
+      text-align: center;
+    }
+
+    .log-row {
+      display: grid;
+      grid-template-columns: 34px minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 6px;
+      min-height: 31px;
+      margin-bottom: 5px;
+      padding: 5px 7px;
+      border: 1px solid transparent;
+      border-radius: 8px;
+      font-size: 11px;
+    }
+
+    .log-row.good {
+      border-color: rgba(53, 196, 106, 0.24);
+      background: var(--green-dim);
+      color: #9fe8b7;
+    }
+
+    .log-row.over {
+      border-color: rgba(255, 93, 93, 0.27);
+      background: var(--red-dim);
+      color: #ffaaaa;
+    }
+
+    .log-task { font-weight: 760; }
+    .log-time { font-weight: 820; text-align: right; }
+    .log-delta { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: currentColor; opacity: 0.84; }
+
+    .section-heading {
+      margin: 10px 2px 5px;
+      color: var(--muted);
+      font-size: 9px;
+      font-weight: 750;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .pause-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 8px;
+      padding: 6px 7px;
+      margin-bottom: 4px;
+      border-radius: 7px;
+      background: rgba(227, 179, 65, 0.09);
+      color: #d9bf77;
+      font-size: 10px;
+    }
+
+    .pause-row.off-clock-row {
+      background: var(--red-dim);
+      color: #ffaaaa;
+    }
+
+    .schedule-body { padding-top: 7px; }
+
+    .schedule-row {
+      padding: 6px 7px;
+      margin-bottom: 4px;
+      border: 1px solid transparent;
+      border-radius: 8px;
+      color: var(--muted);
+      font-size: 9px;
+    }
+
+    .schedule-row.current {
+      border-color: rgba(88, 166, 255, 0.4);
+      background: rgba(88, 166, 255, 0.1);
+      color: var(--text);
+    }
+
+    .schedule-head {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 6px;
+    }
+
+    .schedule-label {
+      min-width: 0;
+      color: var(--text);
+      font-weight: 720;
+      line-height: 1.25;
+    }
+
+    .schedule-time { color: var(--muted); font-weight: 600; }
+    .schedule-count { flex: 0 0 auto; color: var(--text); font-weight: 800; }
+
+    .schedule-track {
+      height: 4px;
+      margin-top: 5px;
+      overflow: hidden;
+      border-radius: 999px;
+      background: #292f38;
+    }
+
+    .schedule-fill {
+      height: 100%;
+      width: 0;
+      border-radius: inherit;
+      background: var(--accent);
+      transition: width 180ms ease;
+    }
+
+    .pause-row span:first-child {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .secondary-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 7px;
+      padding-top: 8px;
+    }
+
+    .secondary-button {
+      min-height: 34px;
+      border-radius: 8px;
+      background: #2a3039;
+      color: var(--text);
+      font-size: 10px;
+      font-weight: 720;
+    }
+
+    .secondary-button.danger { color: #ff9c9c; }
+
+    .log-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 7px;
+      padding-top: 8px;
+    }
+
+    .log-copy-note {
+      min-width: 0;
+      color: var(--muted);
+      font-size: 9px;
+      line-height: 1.25;
+    }
+
+    .log-copy-button {
+      flex: 0 0 auto;
+      min-height: 30px;
+      padding: 0 9px;
+      border-radius: 8px;
+      background: #2a3039;
+      color: var(--text);
+      font-size: 10px;
+      font-weight: 720;
+    }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 1000;
+      display: grid;
+      place-items: center;
+      padding: 10px;
+      background: rgba(0, 0, 0, 0.68);
+    }
+
+    .modal {
+      width: min(230px, calc(100vw - 20px));
+      max-height: calc(100vh - 20px);
+      overflow: auto;
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: var(--panel);
+      box-shadow: 0 16px 42px rgba(0,0,0,0.42);
+    }
+
+    .modal-title {
+      margin: 0 0 6px;
+      font-size: 14px;
+      font-weight: 800;
+    }
+
+    .modal-text {
+      margin: 0;
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.4;
+    }
+
+    .modal-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 7px;
+      margin-top: 11px;
+    }
+
+    .modal-button {
+      min-height: 36px;
+      border-radius: 8px;
+      background: #2a3039;
+      color: var(--text);
+      font-size: 11px;
+      font-weight: 760;
+    }
+
+    .modal-button.danger {
+      background: var(--red);
+      color: #1a0707;
+    }
+
+    .settings-modal { width: min(270px, calc(100vw - 16px)); }
+
+    .modal-title-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 9px;
+    }
+
+    .modal-title-row .modal-title { margin: 0; }
+
+    .modal-close-button {
+      display: grid;
+      place-items: center;
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      background: #2a3039;
+      color: var(--muted);
+      font-size: 16px;
+    }
+
+    .settings-label {
+      display: block;
+      margin: 8px 1px 4px;
+      color: var(--muted);
+      font-size: 9px;
+      font-weight: 750;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .settings-input,
+    .settings-select {
+      width: 100%;
+      min-width: 0;
+      height: 34px;
+      padding: 0 8px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      outline: none;
+      background: #0d1117;
+      color: var(--text);
+      font-size: 11px;
+    }
+
+    .settings-input:focus,
+    .settings-select:focus { border-color: var(--accent); }
+
+    .settings-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 7px;
+      margin-top: 2px;
+    }
+
+    .settings-field label {
+      display: block;
+      margin: 0 1px 3px;
+      color: var(--muted);
+      font-size: 9px;
+    }
+
+    .settings-preview {
+      min-height: 30px;
+      margin-top: 8px;
+      padding: 7px 8px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--panel-2);
+      color: var(--muted);
+      font-size: 9px;
+      line-height: 1.4;
+    }
+
+    .settings-preview.error {
+      border-color: rgba(255, 93, 93, 0.5);
+      color: #ffaaaa;
+    }
+
+    .settings-preset-actions {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 6px;
+      margin-top: 8px;
+    }
+
+    .settings-action-button {
+      min-height: 32px;
+      padding: 4px;
+      border-radius: 8px;
+      background: #2a3039;
+      color: var(--text);
+      font-size: 9px;
+      font-weight: 740;
+      line-height: 1.2;
+    }
+
+    .settings-action-button.primary {
+      background: var(--accent);
+      color: #07111d;
+    }
+
+    .settings-action-button.danger { color: #ff9c9c; }
+
+    .settings-footnote {
+      margin: 8px 2px 0;
+      color: #6e7681;
+      font-size: 8px;
+      line-height: 1.35;
+    }
+
+    .hidden { display: none !important; }
+
+    @media (max-width: 245px) {
+      body { padding: 6px; }
+      .card { padding: 9px; }
+      .timer { font-size: 39px; }
+      .pause-controls { grid-template-columns: minmax(0, 1fr) auto; }
+      .stats { gap: 4px; }
+      .stat { padding-inline: 3px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <div class="topline">
+      <h1>Productivity</h1>
+      <div class="top-actions">
+        <span id="stateDot" class="state-dot" title="Not started"></span>
+        <button id="settingsButton" class="settings-button" type="button" aria-label="Open options" title="Presets and schedule options">⚙</button>
+      </div>
+    </div>
+
+    <section class="card" aria-label="Daily progress">
+      <div class="progress-row">
+        <div id="progressCount" class="progress-count">0 / 166</div>
+        <div id="progressLabel" class="progress-label">0% complete</div>
+      </div>
+      <div class="progress-track" aria-hidden="true">
+        <div id="progressFill" class="progress-fill"></div>
+      </div>
+      <div class="period-progress" aria-label="Morning and afternoon progress">
+        <div class="period-progress-item">
+          <div class="period-progress-head"><span>Morning</span><strong id="morningProgress">0 / 80</strong></div>
+          <div class="period-progress-track" aria-hidden="true"><div id="morningProgressFill" class="period-progress-fill"></div></div>
+        </div>
+        <div class="period-progress-item">
+          <div class="period-progress-head"><span>Afternoon</span><strong id="afternoonProgress">0 / 86</strong></div>
+          <div class="period-progress-track" aria-hidden="true"><div id="afternoonProgressFill" class="period-progress-fill"></div></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="startCard" class="card">
+      <button id="startButton" class="start-button" type="button">Start workday</button>
+    </section>
+
+    <section id="taskCard" class="card task-card hidden" aria-live="polite">
+      <div id="currentTimer" class="timer">00:00</div>
+      <div id="paceStatus" class="pace-status">Target · ready</div>
+      <button id="doneButton" class="done-button" type="button">✓ Task done</button>
+    </section>
+
+    <section class="card" aria-label="Statistics">
+      <div class="stats">
+        <div class="stat">
+          <div id="averageTime" class="stat-value">—</div>
+          <div class="stat-label">Average</div>
+        </div>
+        <div class="stat">
+          <div id="activeTime" class="stat-value">00:00</div>
+          <div class="stat-label">Active</div>
+        </div>
+        <div class="stat">
+          <div id="pausedTime" class="stat-value">00:00</div>
+          <div class="stat-label">Paused</div>
+        </div>
+        <div class="stat">
+          <div id="offClockTime" class="stat-value">00:00</div>
+          <div class="stat-label">Off clock</div>
+        </div>
+      </div>
+    </section>
+
+    <section id="pauseCard" class="card hidden" aria-label="Pause controls">
+      <div class="pause-controls">
+        <input id="pauseReason" class="reason-input" type="text" maxlength="80" placeholder="Reason (optional)" autocomplete="off" />
+        <div class="timer-actions">
+          <button id="pauseButton" class="pause-button" type="button" aria-label="Pause" title="Pause — tracked as paused time"><span aria-hidden="true">⏸</span></button>
+          <button id="offClockButton" class="off-clock-button" type="button" aria-label="Clock out" title="Clock out — excluded from paused time"><span aria-hidden="true">⏸</span></button>
+        </div>
+      </div>
+      <div class="quick-breaks-label">Scheduled</div>
+      <div class="quick-breaks">
+        <button id="breakOneButton" class="quick-break-button" type="button">Break 1</button>
+        <button id="lunchButton" class="quick-break-button lunch" type="button">Lunch</button>
+        <button id="breakTwoButton" class="quick-break-button" type="button">Break 2</button>
+      </div>
+      <div id="pauseNote" class="pause-note"></div>
+    </section>
+
+    <details id="scheduleDetails" open>
+      <summary><span>Work blocks</span><span></span></summary>
+      <div class="details-body schedule-body">
+        <div id="scheduleRowMorningOne" class="schedule-row">
+          <div class="schedule-head"><span class="schedule-label">Morning 1 <span id="scheduleTimeMorningOne" class="schedule-time">08:45–10:00 · 1h 15m</span></span><span id="scheduleCountMorningOne" class="schedule-count">0 / 29</span></div>
+          <div class="schedule-track" aria-hidden="true"><div id="scheduleFillMorningOne" class="schedule-fill"></div></div>
+        </div>
+        <div id="scheduleRowMorningTwo" class="schedule-row">
+          <div class="schedule-head"><span class="schedule-label">Morning 2 <span id="scheduleTimeMorningTwo" class="schedule-time">10:15–12:30 · 2h 15m</span></span><span id="scheduleCountMorningTwo" class="schedule-count">0 / 51</span></div>
+          <div class="schedule-track" aria-hidden="true"><div id="scheduleFillMorningTwo" class="schedule-fill"></div></div>
+        </div>
+        <div id="scheduleRowAfternoonOne" class="schedule-row">
+          <div class="schedule-head"><span class="schedule-label">Afternoon 1 <span id="scheduleTimeAfternoonOne" class="schedule-time">13:00–15:00 · 2h</span></span><span id="scheduleCountAfternoonOne" class="schedule-count">0 / 46</span></div>
+          <div class="schedule-track" aria-hidden="true"><div id="scheduleFillAfternoonOne" class="schedule-fill"></div></div>
+        </div>
+        <div id="scheduleRowAfternoonTwo" class="schedule-row">
+          <div class="schedule-head"><span class="schedule-label">Afternoon 2 <span id="scheduleTimeAfternoonTwo" class="schedule-time">15:15–17:00 · 1h 45m</span></span><span id="scheduleCountAfternoonTwo" class="schedule-count">0 / 40</span></div>
+          <div class="schedule-track" aria-hidden="true"><div id="scheduleFillAfternoonTwo" class="schedule-fill"></div></div>
+        </div>
+      </div>
+    </details>
+
+    <details id="logDetails">
+      <summary><span>Task log</span><span id="logSummary">0 entries</span></summary>
+      <div class="details-body">
+        <div id="taskLog" class="log-list">
+          <div class="empty-log">Completed tasks will appear here.</div>
+        </div>
+        <div class="log-toolbar">
+          <div class="log-copy-note">Paste normally in Google Sheets to keep status colors.</div>
+          <button id="copyLogButton" class="log-copy-button" type="button">Copy log</button>
+        </div>
+      </div>
+    </details>
+
+    <details>
+      <summary><span>Day controls</span><span></span></summary>
+      <div class="details-body">
+        <div class="secondary-actions">
+          <button id="copyButton" class="secondary-button" type="button">Copy summary</button>
+          <button id="resetButton" class="secondary-button danger" type="button">New day / reset</button>
+        </div>
+      </div>
+    </details>
+  </main>
+
+  <div id="resetModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="resetModalTitle">
+    <div class="modal">
+      <h2 id="resetModalTitle" class="modal-title">Start a new day?</h2>
+      <p class="modal-text">This will erase the current timer, completed tasks, pause log, and off-clock log.</p>
+      <div class="modal-actions">
+        <button id="cancelResetButton" class="modal-button" type="button">Cancel</button>
+        <button id="confirmResetButton" class="modal-button danger" type="button">Reset</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="settingsModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="settingsModalTitle">
+    <div class="modal settings-modal">
+      <div class="modal-title-row">
+        <h2 id="settingsModalTitle" class="modal-title">Presets &amp; schedule</h2>
+        <button id="closeSettingsButton" class="modal-close-button" type="button" aria-label="Close options">×</button>
+      </div>
+
+      <label class="settings-label" for="presetSelect">Preset</label>
+      <select id="presetSelect" class="settings-select"></select>
+
+      <label class="settings-label" for="presetNameInput">Preset name</label>
+      <input id="presetNameInput" class="settings-input" type="text" maxlength="32" autocomplete="off" />
+
+      <label class="settings-label" for="dailyTargetInput">Daily target</label>
+      <input id="dailyTargetInput" class="settings-input" type="number" min="4" max="9999" step="1" inputmode="numeric" />
+
+      <span class="settings-label">Work and break times</span>
+      <div class="settings-grid">
+        <div class="settings-field"><label for="workStartInput">Work starts</label><input id="workStartInput" class="settings-input" type="time" step="300" /></div>
+        <div class="settings-field"><label for="breakOneStartInput">Break 1 starts</label><input id="breakOneStartInput" class="settings-input" type="time" step="300" /></div>
+        <div class="settings-field"><label for="breakOneEndInput">Break 1 ends</label><input id="breakOneEndInput" class="settings-input" type="time" step="300" /></div>
+        <div class="settings-field"><label for="lunchStartInput">Lunch starts</label><input id="lunchStartInput" class="settings-input" type="time" step="300" /></div>
+        <div class="settings-field"><label for="lunchEndInput">Lunch ends</label><input id="lunchEndInput" class="settings-input" type="time" step="300" /></div>
+        <div class="settings-field"><label for="breakTwoStartInput">Break 2 starts</label><input id="breakTwoStartInput" class="settings-input" type="time" step="300" /></div>
+        <div class="settings-field"><label for="breakTwoEndInput">Break 2 ends</label><input id="breakTwoEndInput" class="settings-input" type="time" step="300" /></div>
+        <div class="settings-field"><label for="workEndInput">Work ends</label><input id="workEndInput" class="settings-input" type="time" step="300" /></div>
+      </div>
+
+      <div id="settingsPreview" class="settings-preview" aria-live="polite"></div>
+      <div class="settings-preset-actions">
+        <button id="applyPresetButton" class="settings-action-button primary" type="button">Use preset</button>
+        <button id="savePresetButton" class="settings-action-button" type="button">Save new</button>
+        <button id="deletePresetButton" class="settings-action-button danger" type="button">Delete</button>
+      </div>
+      <p class="settings-footnote">Changes apply immediately. The Default preset stays unchanged; custom preset edits are saved when applied.</p>
+    </div>
+  </div>
+
+  <script>
+    (() => {
+      "use strict";
+
+      const STORAGE_KEY = "work-task-timer-v1";
+      const SETTINGS_KEY = "work-task-timer-settings-v1";
+      const DEFAULT_PRESET = Object.freeze({
+        id: "default",
+        name: "Default",
+        goal: 166,
+        workStart: "08:45",
+        breakOneStart: "10:00",
+        breakOneEnd: "10:15",
+        lunchStart: "12:30",
+        lunchEnd: "13:00",
+        breakTwoStart: "15:00",
+        breakTwoEnd: "15:15",
+        workEnd: "17:00"
+      });
+      const TIME_KEYS = [
+        "workStart", "breakOneStart", "breakOneEnd", "lunchStart",
+        "lunchEnd", "breakTwoStart", "breakTwoEnd", "workEnd"
+      ];
+
+      function timeToMinutes(value) {
+        const match = /^(\d{2}):(\d{2})$/.exec(String(value || ""));
+        if (!match) return NaN;
+        const hours = Number(match[1]);
+        const minutes = Number(match[2]);
+        return hours < 24 && minutes < 60 ? hours * 60 + minutes : NaN;
+      }
+
+      function formatDurationMinutes(totalMinutes) {
+        const hours = Math.floor(totalMinutes / 60);
+        const minutes = totalMinutes % 60;
+        if (!hours) return `${minutes}m`;
+        return minutes ? `${hours}h ${minutes}m` : `${hours}h`;
+      }
+
+      function normalizePreset(raw, fallback = DEFAULT_PRESET) {
+        const preset = { ...fallback, ...(raw || {}) };
+        return {
+          id: String(preset.id || fallback.id),
+          name: String(preset.name || fallback.name).trim().slice(0, 32) || fallback.name,
+          goal: Math.max(4, Math.min(9999, Math.round(Number(preset.goal) || fallback.goal))),
+          ...Object.fromEntries(TIME_KEYS.map(key => [key, String(preset[key] || fallback[key])]))
+        };
+      }
+
+      function validatePreset(preset) {
+        if (!preset.name.trim()) return "Enter a preset name.";
+        if (!Number.isInteger(Number(preset.goal)) || Number(preset.goal) < 4 || Number(preset.goal) > 9999) {
+          return "Daily target must be between 4 and 9999.";
+        }
+        const values = TIME_KEYS.map(key => timeToMinutes(preset[key]));
+        if (values.some(value => !Number.isFinite(value))) return "Complete every schedule time.";
+        for (let index = 1; index < values.length; index += 1) {
+          if (values[index] <= values[index - 1]) return "Times must be in chronological order.";
+        }
+        return "";
+      }
+
+      function distributeTargets(goal, durations) {
+        const targets = durations.map(() => 1);
+        let remaining = Math.max(0, goal - targets.length);
+        const totalMinutes = durations.reduce((sum, duration) => sum + duration, 0);
+        const weighted = durations.map((duration, index) => {
+          const raw = totalMinutes ? remaining * duration / totalMinutes : 0;
+          const whole = Math.floor(raw);
+          targets[index] += whole;
+          return { index, remainder: raw - whole };
+        });
+        remaining -= targets.reduce((sum, target) => sum + target, 0) - targets.length;
+        weighted.sort((a, b) => b.remainder - a.remainder || a.index - b.index);
+        for (let index = 0; index < remaining; index += 1) {
+          targets[weighted[index % weighted.length].index] += 1;
+        }
+        return targets;
+      }
+
+      function buildWorkBlocks(preset) {
+        const specs = [
+          { id: "morning-one", label: "Morning 1", shortLabel: "Block 1", start: preset.workStart, end: preset.breakOneStart, until: preset.breakOneEnd },
+          { id: "morning-two", label: "Morning 2", shortLabel: "Block 2", start: preset.breakOneEnd, end: preset.lunchStart, until: preset.lunchEnd },
+          { id: "afternoon-one", label: "Afternoon 1", shortLabel: "Block 3", start: preset.lunchEnd, end: preset.breakTwoStart, until: preset.breakTwoEnd },
+          { id: "afternoon-two", label: "Afternoon 2", shortLabel: "Block 4", start: preset.breakTwoEnd, end: preset.workEnd, until: null }
+        ];
+        const durations = specs.map(spec => timeToMinutes(spec.end) - timeToMinutes(spec.start));
+        const targets = distributeTargets(preset.goal, durations);
+        return specs.map((spec, index) => ({
+          ...spec,
+          time: `${spec.start}–${spec.end}`,
+          durationMinutes: durations[index],
+          target: targets[index],
+          targetMs: durations[index] * 60 * 1000 / targets[index],
+          untilMinutes: spec.until ? timeToMinutes(spec.until) : Infinity
+        }));
+      }
+
+      function loadSettings() {
+        try {
+          const saved = JSON.parse(localStorage.getItem(SETTINGS_KEY));
+          const customPresets = Array.isArray(saved?.customPresets)
+            ? saved.customPresets
+                .map(preset => normalizePreset(preset))
+                .filter(preset => preset.id !== "default" && !validatePreset(preset))
+            : [];
+          const ids = new Set(["default", ...customPresets.map(preset => preset.id)]);
+          return {
+            version: 1,
+            activePresetId: ids.has(saved?.activePresetId) ? saved.activePresetId : "default",
+            customPresets
+          };
+        } catch {
+          return { version: 1, activePresetId: "default", customPresets: [] };
+        }
+      }
+
+      function saveSettings() {
+        try {
+          localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+        } catch {
+          // Presets remain usable for the current page session if storage is blocked.
+        }
+      }
+
+      function allPresets() {
+        return [DEFAULT_PRESET, ...settings.customPresets];
+      }
+
+      function getPresetById(id) {
+        return allPresets().find(preset => preset.id === id) || DEFAULT_PRESET;
+      }
+
+      let settings = loadSettings();
+      let ACTIVE_PRESET;
+      let GOAL;
+      let WORKDAY_MS;
+      let TARGET_MS;
+      let WORK_BLOCKS;
+      let MORNING_TARGET;
+      let AFTERNOON_TARGET;
+
+      function refreshSchedule() {
+        ACTIVE_PRESET = getPresetById(settings.activePresetId);
+        GOAL = ACTIVE_PRESET.goal;
+        WORK_BLOCKS = buildWorkBlocks(ACTIVE_PRESET);
+        WORKDAY_MS = WORK_BLOCKS.reduce((sum, block) => sum + block.durationMinutes, 0) * 60 * 1000;
+        TARGET_MS = WORKDAY_MS / GOAL;
+        MORNING_TARGET = WORK_BLOCKS[0].target + WORK_BLOCKS[1].target;
+        AFTERNOON_TARGET = WORK_BLOCKS[2].target + WORK_BLOCKS[3].target;
+      }
+
+      refreshSchedule();
+
+      const el = {
+        stateDot: document.getElementById("stateDot"),
+        settingsButton: document.getElementById("settingsButton"),
+        progressCount: document.getElementById("progressCount"),
+        progressLabel: document.getElementById("progressLabel"),
+        progressFill: document.getElementById("progressFill"),
+        morningProgress: document.getElementById("morningProgress"),
+        morningProgressFill: document.getElementById("morningProgressFill"),
+        afternoonProgress: document.getElementById("afternoonProgress"),
+        afternoonProgressFill: document.getElementById("afternoonProgressFill"),
+        startCard: document.getElementById("startCard"),
+        startButton: document.getElementById("startButton"),
+        taskCard: document.getElementById("taskCard"),
+        currentTimer: document.getElementById("currentTimer"),
+        paceStatus: document.getElementById("paceStatus"),
+        doneButton: document.getElementById("doneButton"),
+        pauseCard: document.getElementById("pauseCard"),
+        pauseReason: document.getElementById("pauseReason"),
+        pauseButton: document.getElementById("pauseButton"),
+        offClockButton: document.getElementById("offClockButton"),
+        breakOneButton: document.getElementById("breakOneButton"),
+        lunchButton: document.getElementById("lunchButton"),
+        breakTwoButton: document.getElementById("breakTwoButton"),
+        pauseNote: document.getElementById("pauseNote"),
+        averageTime: document.getElementById("averageTime"),
+        activeTime: document.getElementById("activeTime"),
+        pausedTime: document.getElementById("pausedTime"),
+        offClockTime: document.getElementById("offClockTime"),
+        scheduleRows: [
+          document.getElementById("scheduleRowMorningOne"),
+          document.getElementById("scheduleRowMorningTwo"),
+          document.getElementById("scheduleRowAfternoonOne"),
+          document.getElementById("scheduleRowAfternoonTwo")
+        ],
+        scheduleCounts: [
+          document.getElementById("scheduleCountMorningOne"),
+          document.getElementById("scheduleCountMorningTwo"),
+          document.getElementById("scheduleCountAfternoonOne"),
+          document.getElementById("scheduleCountAfternoonTwo")
+        ],
+        scheduleTimes: [
+          document.getElementById("scheduleTimeMorningOne"),
+          document.getElementById("scheduleTimeMorningTwo"),
+          document.getElementById("scheduleTimeAfternoonOne"),
+          document.getElementById("scheduleTimeAfternoonTwo")
+        ],
+        scheduleFills: [
+          document.getElementById("scheduleFillMorningOne"),
+          document.getElementById("scheduleFillMorningTwo"),
+          document.getElementById("scheduleFillAfternoonOne"),
+          document.getElementById("scheduleFillAfternoonTwo")
+        ],
+        logSummary: document.getElementById("logSummary"),
+        taskLog: document.getElementById("taskLog"),
+        copyLogButton: document.getElementById("copyLogButton"),
+        copyButton: document.getElementById("copyButton"),
+        resetButton: document.getElementById("resetButton"),
+        resetModal: document.getElementById("resetModal"),
+        cancelResetButton: document.getElementById("cancelResetButton"),
+        confirmResetButton: document.getElementById("confirmResetButton"),
+        settingsModal: document.getElementById("settingsModal"),
+        closeSettingsButton: document.getElementById("closeSettingsButton"),
+        presetSelect: document.getElementById("presetSelect"),
+        presetNameInput: document.getElementById("presetNameInput"),
+        dailyTargetInput: document.getElementById("dailyTargetInput"),
+        workStartInput: document.getElementById("workStartInput"),
+        breakOneStartInput: document.getElementById("breakOneStartInput"),
+        breakOneEndInput: document.getElementById("breakOneEndInput"),
+        lunchStartInput: document.getElementById("lunchStartInput"),
+        lunchEndInput: document.getElementById("lunchEndInput"),
+        breakTwoStartInput: document.getElementById("breakTwoStartInput"),
+        breakTwoEndInput: document.getElementById("breakTwoEndInput"),
+        workEndInput: document.getElementById("workEndInput"),
+        settingsPreview: document.getElementById("settingsPreview"),
+        applyPresetButton: document.getElementById("applyPresetButton"),
+        savePresetButton: document.getElementById("savePresetButton"),
+        deletePresetButton: document.getElementById("deletePresetButton")
+      };
+
+      const blankState = () => ({
+        version: 2,
+        started: false,
+        startedAt: null,
+        tasks: [],
+        pauses: [],
+        offClockPeriods: [],
+        currentTaskAccumulatedMs: 0,
+        runningSegmentStartedAt: null,
+        paused: false,
+        pauseKind: null,
+        pauseStartedAt: null,
+        currentPauseReason: "",
+        currentPausePreset: null
+      });
+
+      let state = loadState();
+      let lastRenderedLogEntryCount = -1;
+      let copyButtonTimer = null;
+
+      function loadState() {
+        try {
+          const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
+          if (!saved || ![1, 2].includes(saved.version) || !Array.isArray(saved.tasks) || !Array.isArray(saved.pauses)) {
+            return blankState();
+          }
+          const restored = {
+            ...blankState(),
+            ...saved,
+            version: 2,
+            offClockPeriods: Array.isArray(saved.offClockPeriods) ? saved.offClockPeriods : [],
+            pauseKind: saved.paused ? (saved.pauseKind || "pause") : null
+          };
+          // Older versions stopped at the goal. Resume them without counting the gap.
+          delete restored.completed;
+          if (restored.started && !restored.paused && !restored.runningSegmentStartedAt) {
+            restored.runningSegmentStartedAt = nowMs();
+          }
+          return restored;
+        } catch {
+          return blankState();
+        }
+      }
+
+      function saveState() {
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+        } catch {
+          // The timer still works if storage is blocked; only persistence is unavailable.
+        }
+      }
+
+      function nowMs() { return Date.now(); }
+
+      function currentTaskMs(now = nowMs()) {
+        if (!state.started) return 0;
+        const liveSegment = (!state.paused && state.runningSegmentStartedAt)
+          ? Math.max(0, now - state.runningSegmentStartedAt)
+          : 0;
+        return Math.max(0, state.currentTaskAccumulatedMs + liveSegment);
+      }
+
+      function completedActiveMs() {
+        return state.tasks.reduce((sum, task) => sum + Number(task.durationMs || 0), 0);
+      }
+
+      function activeDayMs(now = nowMs()) {
+        return completedActiveMs() + currentTaskMs(now);
+      }
+
+      function pausedDayMs(now = nowMs()) {
+        const complete = state.pauses.reduce((sum, pause) => sum + Number(pause.durationMs || 0), 0);
+        const live = state.paused && state.pauseKind === "pause" && state.pauseStartedAt
+          ? Math.max(0, now - state.pauseStartedAt)
+          : 0;
+        return complete + live;
+      }
+
+      function offClockDayMs(now = nowMs()) {
+        const complete = state.offClockPeriods.reduce((sum, period) => sum + Number(period.durationMs || 0), 0);
+        const live = state.paused && state.pauseKind === "off-clock" && state.pauseStartedAt
+          ? Math.max(0, now - state.pauseStartedAt)
+          : 0;
+        return complete + live;
+      }
+
+      function liveStoppedMs(now = nowMs()) {
+        return state.paused && state.pauseStartedAt ? Math.max(0, now - state.pauseStartedAt) : 0;
+      }
+
+      function blockForTimestamp(timestamp = nowMs()) {
+        const date = new Date(timestamp);
+        const minutes = date.getHours() * 60 + date.getMinutes();
+        return WORK_BLOCKS.find(block => minutes < block.untilMinutes) || WORK_BLOCKS[WORK_BLOCKS.length - 1];
+      }
+
+      function blockById(id) {
+        return WORK_BLOCKS.find(block => block.id === id) || null;
+      }
+
+      function taskBlock(task) {
+        return blockById(task.blockId) || blockForTimestamp(task.completedAt || state.startedAt || nowMs());
+      }
+
+      function targetForTask(task) {
+        return Number(task.targetMs) || taskBlock(task).targetMs || TARGET_MS;
+      }
+
+      function blockCounts() {
+        const counts = Object.fromEntries(WORK_BLOCKS.map(block => [block.id, 0]));
+        state.tasks.forEach(task => { counts[taskBlock(task).id] += 1; });
+        return counts;
+      }
+
+      function formatClock(ms, showHoursWhenNeeded = true) {
+        const totalSeconds = Math.max(0, Math.floor(ms / 1000));
+        const hours = Math.floor(totalSeconds / 3600);
+        const minutes = Math.floor((totalSeconds % 3600) / 60);
+        const seconds = totalSeconds % 60;
+        if (showHoursWhenNeeded && hours > 0) {
+          return `${hours}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+        }
+        const totalMinutes = Math.floor(totalSeconds / 60);
+        return `${String(totalMinutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+      }
+
+      function formatSigned(ms) {
+        const sign = ms >= 0 ? "+" : "−";
+        const roundedAwayFromZeroMs = Math.ceil(Math.abs(ms) / 1000) * 1000;
+        return sign + formatClock(roundedAwayFromZeroMs, false);
+      }
+
+      const presetTimeInputs = {
+        workStart: el.workStartInput,
+        breakOneStart: el.breakOneStartInput,
+        breakOneEnd: el.breakOneEndInput,
+        lunchStart: el.lunchStartInput,
+        lunchEnd: el.lunchEndInput,
+        breakTwoStart: el.breakTwoStartInput,
+        breakTwoEnd: el.breakTwoEndInput,
+        workEnd: el.workEndInput
+      };
+
+      function presetFromForm(id = el.presetSelect.value || "draft") {
+        return {
+          id,
+          name: el.presetNameInput.value.trim(),
+          goal: Number(el.dailyTargetInput.value),
+          ...Object.fromEntries(TIME_KEYS.map(key => [key, presetTimeInputs[key].value]))
+        };
+      }
+
+      function setPresetForm(preset) {
+        el.presetNameInput.value = preset.name;
+        el.dailyTargetInput.value = preset.goal;
+        TIME_KEYS.forEach(key => { presetTimeInputs[key].value = preset[key]; });
+        const isDefault = preset.id === "default";
+        el.applyPresetButton.textContent = isDefault ? "Use default" : "Save & use";
+        el.deletePresetButton.disabled = isDefault;
+        updateSettingsPreview();
+      }
+
+      function renderPresetOptions(selectedId = settings.activePresetId) {
+        el.presetSelect.replaceChildren(...allPresets().map(preset => {
+          const option = document.createElement("option");
+          option.value = preset.id;
+          option.textContent = preset.id === settings.activePresetId ? `${preset.name} · active` : preset.name;
+          return option;
+        }));
+        el.presetSelect.value = getPresetById(selectedId).id;
+        setPresetForm(getPresetById(el.presetSelect.value));
+      }
+
+      function updateSettingsPreview(message = "") {
+        if (message) {
+          el.settingsPreview.textContent = message;
+          el.settingsPreview.classList.add("error");
+          return false;
+        }
+        const candidate = presetFromForm();
+        const error = validatePreset(candidate);
+        if (error) {
+          el.settingsPreview.textContent = error;
+          el.settingsPreview.classList.add("error");
+          return false;
+        }
+        const blocks = buildWorkBlocks(candidate);
+        const focusedMinutes = blocks.reduce((sum, block) => sum + block.durationMinutes, 0);
+        el.settingsPreview.textContent = `Block targets: ${blocks.map(block => block.target).join(" · ")} · ${formatDurationMinutes(focusedMinutes)} focused`;
+        el.settingsPreview.classList.remove("error");
+        return true;
+      }
+
+      function openSettings() {
+        renderPresetOptions(settings.activePresetId);
+        el.settingsModal.classList.remove("hidden");
+        el.presetSelect.focus();
+      }
+
+      function closeSettings() {
+        el.settingsModal.classList.add("hidden");
+        el.settingsButton.focus();
+      }
+
+      function reconcileStateWithSchedule() {
+        if (state.started && !state.paused && !state.runningSegmentStartedAt) {
+          state.runningSegmentStartedAt = nowMs();
+        }
+        saveState();
+        lastRenderedLogEntryCount = -1;
+        render(true);
+      }
+
+      function activatePreset(id) {
+        settings.activePresetId = getPresetById(id).id;
+        saveSettings();
+        refreshSchedule();
+        reconcileStateWithSchedule();
+      }
+
+      function applyPresetFromForm() {
+        if (!updateSettingsPreview()) return;
+        const selectedId = el.presetSelect.value;
+        const candidate = presetFromForm(selectedId);
+
+        if (selectedId === "default") {
+          const changed = candidate.name !== DEFAULT_PRESET.name
+            || candidate.goal !== DEFAULT_PRESET.goal
+            || TIME_KEYS.some(key => candidate[key] !== DEFAULT_PRESET[key]);
+          if (changed) {
+            updateSettingsPreview("The Default preset is locked. Choose Save new for this schedule.");
+            return;
+          }
+        } else {
+          const index = settings.customPresets.findIndex(preset => preset.id === selectedId);
+          if (index >= 0) settings.customPresets[index] = normalizePreset(candidate);
+        }
+
+        activatePreset(selectedId);
+        closeSettings();
+      }
+
+      function saveNewPreset() {
+        if (!updateSettingsPreview()) return;
+        const id = `preset-${Date.now().toString(36)}`;
+        const candidate = normalizePreset(presetFromForm(id));
+        settings.customPresets.push(candidate);
+        settings.activePresetId = id;
+        saveSettings();
+        refreshSchedule();
+        reconcileStateWithSchedule();
+        closeSettings();
+      }
+
+      function deleteSelectedPreset() {
+        const selectedId = el.presetSelect.value;
+        if (selectedId === "default") return;
+        settings.customPresets = settings.customPresets.filter(preset => preset.id !== selectedId);
+        if (settings.activePresetId === selectedId) settings.activePresetId = "default";
+        saveSettings();
+        refreshSchedule();
+        reconcileStateWithSchedule();
+        renderPresetOptions(settings.activePresetId);
+      }
+
+      function startDay() {
+        if (state.started) return;
+        const now = nowMs();
+        state = blankState();
+        state.started = true;
+        state.startedAt = now;
+        state.runningSegmentStartedAt = now;
+        saveState();
+        render(true);
+      }
+
+      function completeTask() {
+        if (!state.started || state.paused) return;
+        const now = nowMs();
+        const durationMs = currentTaskMs(now);
+        const block = blockForTimestamp(now);
+        state.tasks.push({
+          number: state.tasks.length + 1,
+          durationMs,
+          completedAt: now,
+          blockId: block.id,
+          targetMs: block.targetMs,
+          overTarget: durationMs > block.targetMs
+        });
+        state.currentTaskAccumulatedMs = 0;
+
+        state.runningSegmentStartedAt = now;
+
+        saveState();
+        render(true);
+      }
+
+      function startPause(kind, presetReason = null) {
+        if (!state.started || state.paused) return;
+        const now = nowMs();
+        if (presetReason !== null) el.pauseReason.value = presetReason;
+        state.currentTaskAccumulatedMs = currentTaskMs(now);
+        state.runningSegmentStartedAt = null;
+        state.paused = true;
+        state.pauseKind = kind;
+        state.pauseStartedAt = now;
+        state.currentPauseReason = el.pauseReason.value.trim();
+        state.currentPausePreset = presetReason;
+        saveState();
+        render(true);
+      }
+
+      function resumeWork() {
+        if (!state.started || !state.paused) return;
+        const now = nowMs();
+        const durationMs = Math.max(0, now - state.pauseStartedAt);
+        const entry = {
+          reason: el.pauseReason.value.trim() || state.currentPauseReason || "Unknown",
+          durationMs,
+          startedAt: state.pauseStartedAt,
+          endedAt: now
+        };
+        if (state.pauseKind === "off-clock") state.offClockPeriods.push(entry);
+        else state.pauses.push(entry);
+        state.paused = false;
+        state.pauseKind = null;
+        state.pauseStartedAt = null;
+        state.currentPauseReason = "";
+        state.currentPausePreset = null;
+        state.runningSegmentStartedAt = now;
+        el.pauseReason.value = "";
+        saveState();
+        render(true);
+      }
+
+      function togglePause(kind = "pause") {
+        if (!state.started) return;
+        if (!state.paused) startPause(kind);
+        else if (state.pauseKind === kind) resumeWork();
+      }
+
+      function togglePresetPause(kind, reason) {
+        if (!state.started) return;
+        if (!state.paused) startPause(kind, reason);
+        else if (state.pauseKind === kind && state.currentPausePreset === reason) resumeWork();
+      }
+
+      function openResetModal() {
+        const hasData = state.started || state.tasks.length || state.pauses.length || state.offClockPeriods.length;
+        if (!hasData) {
+          resetDay();
+          return;
+        }
+        el.resetModal.classList.remove("hidden");
+        el.cancelResetButton.focus();
+      }
+
+      function closeResetModal() {
+        el.resetModal.classList.add("hidden");
+        el.resetButton.focus();
+      }
+
+      function resetDay() {
+        state = blankState();
+        saveState();
+        el.pauseReason.value = "";
+        lastRenderedLogEntryCount = -1;
+        el.resetModal.classList.add("hidden");
+        render(true);
+      }
+
+      function buildSummary() {
+        const counts = blockCounts();
+        const morningDone = counts["morning-one"] + counts["morning-two"];
+        const afternoonDone = counts["afternoon-one"] + counts["afternoon-two"];
+        const average = state.tasks.length ? completedActiveMs() / state.tasks.length : 0;
+        const under = state.tasks.filter(task => task.durationMs <= targetForTask(task)).length;
+        const over = state.tasks.length - under;
+        const lines = [
+          `Workday progress: ${state.tasks.length}/${GOAL}`,
+          `Morning: ${morningDone}/${MORNING_TARGET}`,
+          `Afternoon: ${afternoonDone}/${AFTERNOON_TARGET}`,
+          `Blocks: ${WORK_BLOCKS.map(block => `${block.label} ${counts[block.id]}/${block.target}`).join(" · ")}`,
+          `Average task time: ${state.tasks.length ? formatClock(average) : "—"}`,
+          `Active work time: ${formatClock(activeDayMs())}`,
+          `Paused time: ${formatClock(pausedDayMs())}`,
+          `Off-clock time: ${formatClock(offClockDayMs())}`,
+          `At/under target: ${under}`,
+          `Over target: ${over}`
+        ];
+        return lines.join("\n");
+      }
+
+      function formatSheetTime(ms) {
+        const totalSeconds = Math.max(0, Math.round(ms / 1000));
+        const hours = Math.floor(totalSeconds / 3600);
+        const minutes = Math.floor((totalSeconds % 3600) / 60);
+        const seconds = totalSeconds % 60;
+        return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+      }
+
+      function logEntries() {
+        return [
+          ...state.tasks.map(entry => ({ kind: "task", entry, at: entry.completedAt || 0 })),
+          ...state.pauses.map(entry => ({ kind: "pause", entry, at: entry.endedAt || entry.startedAt + entry.durationMs || 0 })),
+          ...state.offClockPeriods.map(entry => ({ kind: "off-clock", entry, at: entry.endedAt || entry.startedAt + entry.durationMs || 0 }))
+        ].sort((a, b) => a.at - b.at);
+      }
+
+      function buildLogRows() {
+        const rows = [["Task / event", "Work block", "Duration", "Target", "Difference vs target", "Status", "Completed at", "Reason"]];
+        logEntries().forEach(({ kind, entry: task, at }) => {
+          if (kind !== "task") {
+            rows.push([
+              kind === "pause" ? "Pause" : "Off clock",
+              blockForTimestamp(task.startedAt || at).label,
+              formatSheetTime(task.durationMs), "", "",
+              kind === "pause" ? "Paused" : "Off clock",
+              at ? new Date(at).toLocaleString() : "",
+              task.reason || "Unknown"
+            ]);
+            return;
+          }
+          const block = taskBlock(task);
+          const targetMs = targetForTask(task);
+          const delta = task.durationMs - targetMs;
+          rows.push([
+            task.number,
+            block.label,
+            formatSheetTime(task.durationMs),
+            formatSheetTime(targetMs),
+            delta === 0 ? "At target" : `${formatSheetTime(Math.abs(delta))} ${delta > 0 ? "over" : "under"}`,
+            task.durationMs > targetMs ? "Over target" : "At/under target",
+            task.completedAt ? new Date(task.completedAt).toLocaleString() : "",
+            ""
+          ]);
+        });
+        if (state.pauses.length || state.offClockPeriods.length) {
+          rows.push(["Total paused", "", formatSheetTime(state.pauses.reduce((sum, entry) => sum + entry.durationMs, 0)), "", "", "", "", ""]);
+          rows.push(["Total off clock", "", formatSheetTime(state.offClockPeriods.reduce((sum, entry) => sum + entry.durationMs, 0)), "", "", "", "", ""]);
+        }
+        return rows;
+      }
+
+      function sheetText(value) {
+        const text = String(value).replace(/[\t\r\n]+/g, " ");
+        return /^[=+@-]/.test(text.trimStart()) ? `'${text}` : text;
+      }
+
+      function buildLogTSV(rows = buildLogRows()) {
+        return rows.map(row => row.map(sheetText).join("\t")).join("\n");
+      }
+
+      function buildLogHTML(rows = buildLogRows()) {
+        const escapeHTML = value => sheetText(value).replace(/[&<>"']/g, char => ({
+          "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+        })[char]);
+        return `<table><tbody>${rows.map((row, index) => `<tr>${row.map((value, column) => {
+          const background = index === 0 ? "#e8eaed"
+            : column === 5 && value === "Over target" ? "#f4cccc"
+            : column === 5 && value === "At/under target" ? "#d9ead3" : "#ffffff";
+          const tag = index === 0 ? "th" : "td";
+          return `<${tag} bgcolor="${background}" style="background-color:${background};color:#202124;padding:4px 8px">${escapeHTML(value)}</${tag}>`;
+        }).join("")}</tr>`).join("")}</tbody></table>`;
+      }
+
+      async function copyFormattedLog(text, html) {
+        try {
+          await navigator.clipboard.write([new ClipboardItem({
+            "text/plain": new Blob([text], { type: "text/plain" }),
+            "text/html": new Blob([html], { type: "text/html" })
+          })]);
+          return "formatted";
+        } catch {
+          // Retain both formats in browsers without the async clipboard API.
+        }
+        const area = document.createElement("textarea");
+        area.value = text;
+        area.style.position = "fixed";
+        area.style.opacity = "0";
+        const focused = document.activeElement;
+        let copied = false;
+        const onCopy = event => {
+          if (!event.clipboardData) return;
+          event.clipboardData.setData("text/plain", text);
+          event.clipboardData.setData("text/html", html);
+          event.preventDefault();
+          copied = true;
+        };
+        document.body.appendChild(area);
+        document.addEventListener("copy", onCopy);
+        try {
+          area.select();
+          if (document.execCommand("copy") && copied) return "formatted";
+        } catch {
+          // A plain-text copy is still useful when formatted copying is blocked.
+        } finally {
+          document.removeEventListener("copy", onCopy);
+          area.remove();
+          if (focused) focused.focus({ preventScroll: true });
+        }
+        return await copyText(text) ? "plain" : false;
+      }
+
+      async function copyText(text) {
+        try {
+          await navigator.clipboard.writeText(text);
+          return true;
+        } catch {
+          const area = document.createElement("textarea");
+          area.value = text;
+          area.style.position = "fixed";
+          area.style.opacity = "0";
+          document.body.appendChild(area);
+          area.select();
+          const ok = document.execCommand("copy");
+          area.remove();
+          return ok;
+        }
+      }
+
+      async function copyLog() {
+        const rows = buildLogRows();
+        const result = await copyFormattedLog(buildLogTSV(rows), buildLogHTML(rows));
+        const original = "Copy log";
+        el.copyLogButton.textContent = result === "formatted" ? "Copied" : result === "plain" ? "Copied without colors" : "Copy failed";
+        setTimeout(() => { el.copyLogButton.textContent = original; }, 1300);
+      }
+
+      async function copySummary() {
+        const text = buildSummary();
+        const ok = await copyText(text);
+        flashCopyButton(ok ? "Copied" : "Copy failed");
+      }
+
+      function flashCopyButton(text) {
+        clearTimeout(copyButtonTimer);
+        const original = "Copy summary";
+        el.copyButton.textContent = text;
+        copyButtonTimer = setTimeout(() => { el.copyButton.textContent = original; }, 1300);
+      }
+
+      function renderLog(force = false) {
+        const entryCount = state.tasks.length + state.pauses.length + state.offClockPeriods.length;
+        if (!force && lastRenderedLogEntryCount === entryCount) return;
+        lastRenderedLogEntryCount = entryCount;
+        el.logSummary.textContent = `${entryCount} ${entryCount === 1 ? "entry" : "entries"}`;
+
+        if (!state.tasks.length && !state.pauses.length && !state.offClockPeriods.length) {
+          el.taskLog.innerHTML = '<div class="empty-log">Completed tasks will appear here.</div>';
+          return;
+        }
+
+        const fragment = document.createDocumentFragment();
+
+        logEntries().reverse().forEach(({ kind, entry: task }) => {
+          const row = document.createElement("div");
+          if (kind !== "task") {
+            row.className = `pause-row${kind === "off-clock" ? " off-clock-row" : ""}`;
+            const reason = document.createElement("span");
+            reason.textContent = `${kind === "pause" ? "Pause" : "Off clock"} · ${task.reason || "Unknown"}`;
+            reason.title = reason.textContent;
+            const duration = document.createElement("span");
+            duration.textContent = formatClock(task.durationMs);
+            row.append(reason, duration);
+            fragment.appendChild(row);
+            return;
+          }
+          const block = taskBlock(task);
+          const targetMs = targetForTask(task);
+          const delta = task.durationMs - targetMs;
+          const isOver = task.durationMs > targetMs;
+          row.className = `log-row ${isOver ? "over" : "good"}`;
+          row.innerHTML = `
+            <span class="log-task">#${task.number}</span>
+            <span class="log-delta" title="${block.label}">${block.shortLabel} · ${delta === 0 ? "At target" : `${formatSigned(delta)} ${isOver ? "over" : "under"}`}</span>
+            <span class="log-time">${formatClock(task.durationMs)}</span>
+          `;
+          fragment.appendChild(row);
+        });
+
+        if (state.pauses.length) {
+          const heading = document.createElement("div");
+          heading.className = "section-heading";
+          heading.textContent = "Pauses";
+          fragment.appendChild(heading);
+
+          [...state.pauses].reverse().forEach(pause => {
+            const row = document.createElement("div");
+            row.className = "pause-row";
+            const reason = document.createElement("span");
+            reason.textContent = pause.reason;
+            reason.title = pause.reason;
+            const duration = document.createElement("span");
+            duration.textContent = formatClock(pause.durationMs);
+            row.append(reason, duration);
+            fragment.appendChild(row);
+          });
+        }
+
+        if (state.offClockPeriods.length) {
+          const heading = document.createElement("div");
+          heading.className = "section-heading";
+          heading.textContent = "Off clock";
+          fragment.appendChild(heading);
+
+          [...state.offClockPeriods].reverse().forEach(period => {
+            const row = document.createElement("div");
+            row.className = "pause-row off-clock-row";
+            const reason = document.createElement("span");
+            reason.textContent = period.reason;
+            reason.title = period.reason;
+            const duration = document.createElement("span");
+            duration.textContent = formatClock(period.durationMs);
+            row.append(reason, duration);
+            fragment.appendChild(row);
+          });
+        }
+
+        el.taskLog.replaceChildren(fragment);
+      }
+
+      function render(forceLog = false) {
+        const now = nowMs();
+        const done = state.tasks.length;
+        const percent = (done / GOAL) * 100;
+        const current = currentTaskMs(now);
+        const currentBlock = blockForTimestamp(now);
+        const currentTargetMs = currentBlock.targetMs;
+        const over = current > currentTargetMs;
+        const average = done ? completedActiveMs() / done : 0;
+        const counts = blockCounts();
+        const morningDone = counts["morning-one"] + counts["morning-two"];
+        const afternoonDone = counts["afternoon-one"] + counts["afternoon-two"];
+
+        el.progressCount.textContent = `${done} / ${GOAL}`;
+        el.progressLabel.textContent = `${Math.round(percent)}% complete${done >= GOAL ? " · Goal reached" : ""}`;
+        el.progressFill.style.width = `${Math.min(100, percent)}%`;
+        el.morningProgress.textContent = `${morningDone} / ${MORNING_TARGET}`;
+        el.morningProgressFill.style.width = `${Math.min(100, (morningDone / MORNING_TARGET) * 100)}%`;
+        el.afternoonProgress.textContent = `${afternoonDone} / ${AFTERNOON_TARGET}`;
+        el.afternoonProgressFill.style.width = `${Math.min(100, (afternoonDone / AFTERNOON_TARGET) * 100)}%`;
+
+        WORK_BLOCKS.forEach((block, index) => {
+          el.scheduleCounts[index].textContent = `${counts[block.id]} / ${block.target}`;
+          el.scheduleTimes[index].textContent = `${block.time} · ${formatDurationMinutes(block.durationMinutes)}`;
+          el.scheduleFills[index].style.width = `${Math.min(100, (counts[block.id] / block.target) * 100)}%`;
+          el.scheduleRows[index].classList.toggle("current", block.id === currentBlock.id);
+        });
+        el.startCard.classList.toggle("hidden", state.started);
+        el.taskCard.classList.toggle("hidden", !state.started);
+        el.pauseCard.classList.toggle("hidden", !state.started);
+
+        el.stateDot.className = "state-dot";
+        if (state.started) {
+          el.stateDot.classList.add(state.paused ? (state.pauseKind === "off-clock" ? "off-clock" : "paused") : "running");
+        }
+        el.stateDot.title = !state.started
+          ? "Not started"
+          : state.paused
+            ? (state.pauseKind === "off-clock" ? "Off clock" : "Paused")
+            : "Running";
+
+        if (state.started) {
+          el.currentTimer.textContent = formatClock(current);
+
+          el.taskCard.classList.toggle("near-target", !over && current >= Math.max(0, currentTargetMs - 20000) && !state.paused);
+          el.taskCard.classList.toggle("over", over && !state.paused);
+          el.taskCard.classList.toggle("paused", state.paused && state.pauseKind === "pause");
+          el.taskCard.classList.toggle("off-clock", state.paused && state.pauseKind === "off-clock");
+
+          if (state.paused) {
+            el.paceStatus.textContent = `${state.pauseKind === "off-clock" ? "Off clock" : "Paused"} · ${formatClock(liveStoppedMs(now))}`;
+          } else if (over) {
+            el.paceStatus.textContent = `Target ${formatClock(currentTargetMs, false)} · Over target`;
+          } else {
+            el.paceStatus.textContent = `Target ${formatClock(currentTargetMs, false)}`;
+          }
+
+          el.doneButton.disabled = state.paused;
+          el.doneButton.textContent = "✓ Task done";
+        }
+
+        const pauseActive = state.paused && state.pauseKind === "pause";
+        const offClockActive = state.paused && state.pauseKind === "off-clock";
+        el.pauseReason.disabled = false;
+        el.pauseReason.placeholder = state.paused ? "Add/edit reason (optional)" : "Reason (optional)";
+        el.pauseButton.classList.toggle("active", pauseActive);
+        el.offClockButton.classList.toggle("active", offClockActive);
+        el.pauseButton.disabled = state.paused && !pauseActive;
+        el.offClockButton.disabled = state.paused && !offClockActive;
+        el.pauseButton.textContent = pauseActive ? "▶" : "⏸";
+        el.offClockButton.textContent = offClockActive ? "▶" : "⏸";
+        el.pauseButton.setAttribute("aria-label", pauseActive ? "Resume work" : "Pause");
+        el.offClockButton.setAttribute("aria-label", offClockActive ? "Resume work" : "Clock out");
+        el.pauseButton.title = pauseActive ? "Resume work" : "Pause — tracked as paused time";
+        el.offClockButton.title = offClockActive ? "Resume work" : "Clock out — excluded from paused time";
+
+        const presets = [
+          { button: el.breakOneButton, kind: "pause", reason: "Break 1" },
+          { button: el.lunchButton, kind: "off-clock", reason: "Lunch" },
+          { button: el.breakTwoButton, kind: "pause", reason: "Break 2" }
+        ];
+        presets.forEach(preset => {
+          const active = state.paused && state.pauseKind === preset.kind && state.currentPausePreset === preset.reason;
+          preset.button.classList.toggle("active", active);
+          preset.button.disabled = state.paused && !active;
+          preset.button.title = active ? "Resume work" : `Start ${preset.reason}`;
+        });
+
+        el.pauseNote.classList.toggle("visible", state.paused);
+        el.pauseNote.classList.toggle("off-clock", offClockActive);
+        if (state.paused) {
+          const reason = state.currentPauseReason || "Unknown";
+          el.pauseNote.textContent = offClockActive
+            ? `Off clock for “${reason}” — excluded from active and paused time.`
+            : `Paused for “${reason}” — tracked separately from active work.`;
+        } else {
+          el.pauseNote.textContent = "";
+        }
+
+        el.averageTime.textContent = done ? formatClock(average) : "—";
+        el.activeTime.textContent = formatClock(activeDayMs(now));
+        el.pausedTime.textContent = formatClock(pausedDayMs(now));
+        el.offClockTime.textContent = formatClock(offClockDayMs(now));
+
+        renderLog(forceLog);
+      }
+
+      el.pauseReason.value = state.currentPauseReason || "";
+      el.settingsButton.addEventListener("click", openSettings);
+      el.closeSettingsButton.addEventListener("click", closeSettings);
+      el.presetSelect.addEventListener("change", () => setPresetForm(getPresetById(el.presetSelect.value)));
+      el.applyPresetButton.addEventListener("click", applyPresetFromForm);
+      el.savePresetButton.addEventListener("click", saveNewPreset);
+      el.deletePresetButton.addEventListener("click", deleteSelectedPreset);
+      [el.presetNameInput, el.dailyTargetInput, ...Object.values(presetTimeInputs)].forEach(input => {
+        input.addEventListener("input", () => updateSettingsPreview());
+      });
+      el.settingsModal.addEventListener("click", event => {
+        if (event.target === el.settingsModal) closeSettings();
+      });
+      el.startButton.addEventListener("click", startDay);
+      el.doneButton.addEventListener("click", completeTask);
+      el.pauseButton.addEventListener("click", () => togglePause("pause"));
+      el.offClockButton.addEventListener("click", () => togglePause("off-clock"));
+      el.breakOneButton.addEventListener("click", () => togglePresetPause("pause", "Break 1"));
+      el.lunchButton.addEventListener("click", () => togglePresetPause("off-clock", "Lunch"));
+      el.breakTwoButton.addEventListener("click", () => togglePresetPause("pause", "Break 2"));
+      el.resetButton.addEventListener("click", openResetModal);
+      el.cancelResetButton.addEventListener("click", closeResetModal);
+      el.confirmResetButton.addEventListener("click", resetDay);
+      el.resetModal.addEventListener("click", event => {
+        if (event.target === el.resetModal) closeResetModal();
+      });
+      el.copyLogButton.addEventListener("click", copyLog);
+      el.copyButton.addEventListener("click", copySummary);
+      el.pauseReason.addEventListener("input", () => {
+        if (!state.paused) return;
+        state.currentPauseReason = el.pauseReason.value.trim();
+        saveState();
+      });
+
+      document.addEventListener("keydown", event => {
+        if (event.key === "Escape") {
+          if (!el.settingsModal.classList.contains("hidden")) {
+            event.preventDefault();
+            closeSettings();
+          } else if (!el.resetModal.classList.contains("hidden")) {
+            event.preventDefault();
+            closeResetModal();
+          }
+        }
+      });
+
+      window.addEventListener("beforeunload", saveState);
+      document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "hidden") saveState();
+        else render(true);
+      });
+
+      setInterval(() => render(false), 200);
+      render(true);
+    })();
+  </script>
+</body>
+</html>
